@@ -1,6 +1,6 @@
 import './filtros.css';
 
-const Filtros = () => {
+const Filtros = ({ inputRef, searchCharacter }) => {
     return (
         <div className='filtros'>
             <label htmlFor='nombre'>Filtrar por nombre:</label>
@@ -8,6 +8,9 @@ const Filtros = () => {
                 type='text'
                 placeholder='Rick, Morty, Beth, Alien, ...etc'
                 name='nombre'
+                onChange={searchCharacter}
+                autoComplete='on'
+                ref={inputRef}
             />
         </div>
     );
