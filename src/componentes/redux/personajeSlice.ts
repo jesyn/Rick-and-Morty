@@ -1,32 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
-
-interface Personaje {
-    id: number;
-    name: string;
-    status: string;
-    species: string;
-    type: string;
-    gender: string;
-    origin: {
-        name: string;
-        url: string;
-    },
-    location: {
-        name: string;
-        url: string;
-    },
-    image: string;
-    episode: [string];
-    url: string;
-    created: string;
-}
-
-interface Info {
-    count: number;
-    pages: number;
-    next:  string;
-    prev:  string;
-}
+import { Info, Personaje } from "../../types/character.types";
 
 interface initialType {
     inputValue: string;
@@ -34,28 +7,33 @@ interface initialType {
     personajes: Personaje[];
     favoritos: number[];
     loading: boolean;
+    error: boolean;
 } 
 
+
+//TRAER TODOS LOS PERSONAJES
 export const getPesonajes = createAsyncThunk(
     'personajes',
     async (page: number) => {
-        const res = await fetch(`https://rickandmortyapi.com/api/character/?page=${page}&limit=9`)
-        const parseRes = await res.json()
-        const result = parseRes
-        //console.log(result)
-        return result
+        const res = await fetch(`https://rickandmortyapi.com/api/character/?page=${page}`)
+        if(res.ok) {
+            return await res.json()
+        }else {
+            throw new Error('Pagina no encontrada')
+        }
     }
 )
 
+//FILTRAR PERSONAJES POR NOMBRE
 export const getFilterPesonajes = createAsyncThunk(
     'personaje',
     async (name: string) => {
         const res = await fetch(`https://rickandmortyapi.com/api/character/?name=${name}`)
-        const parseRes = await res.json()
-        const result = parseRes
-        return result
-        
-        
+        if(res.ok){
+            return await res.json()
+        }else {
+            throw new Error('Pagina no encontrada')
+        }
     }
 )
 
@@ -64,7 +42,8 @@ const initialState: initialType = {
     metaData: {count: 0, pages: 1, next: "", prev: ""},
     personajes: [],
     favoritos: [],
-    loading: false
+    loading: false,
+    error: false,
 }
 
 const personajesSlice = createSlice({
@@ -76,31 +55,51 @@ const personajesSlice = createSlice({
         },
         updateFavoritos: (state, action) => {
             state.favoritos = action.payload
+        },
+        limpiarBusqueda: (state) => {
+            state.inputValue= ""
+        },
+        limpiarFavoritos: (state) => {
+            state.favoritos= []
         }
     },
     extraReducers: (builder) => {
         builder
             .addCase(getPesonajes.pending, (state) => {
                 state.loading = true
+                state.error = false
+                state.personajes = []
             })
             .addCase(getPesonajes.fulfilled, (state, action) => {
                 state.loading = false
+                state.error = false
                 state.personajes= action.payload.results
                 state.metaData= action.payload.info
             })
-            .addCase(getPesonajes.rejected, (state, action) => {
+            .addCase(getPesonajes.rejected, (state) => {
                 state.loading = false
+                state.error = true
+                state.personajes = []
             }) 
             .addCase(getFilterPesonajes.pending, (state) => {
                 state.loading = true
+                state.error = false
+                state.personajes = []
             })
             .addCase(getFilterPesonajes.fulfilled, (state, action) => {
                 state.loading = false
+                state.error = false
                 state.personajes= action.payload.results
                 state.metaData= action.payload.info
             })
+            .addCase(getFilterPesonajes.rejected, (state, action) => {
+                state.metaData.pages = 1
+                state.loading = false
+                state.error = true
+                state.personajes = []
+            })
     }
 })
-export const { actionBusqueda , updateFavoritos} = personajesSlice.actions
+export const { actionBusqueda , updateFavoritos, limpiarBusqueda, limpiarFavoritos} = personajesSlice.actions
 
 export default personajesSlice.reducer
